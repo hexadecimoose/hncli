@@ -89,6 +89,31 @@ hncli item 12345678 --plain | less
 - Stories and comments: [HN Firebase API](https://github.com/HackerNews/API)
 - Search: [Algolia HN Search API](https://hn.algolia.com/api)
 
+## Configuration
+
+### `HNCLI_OPEN`
+
+Controls what happens when you press `o` (open URL) or `c` (open HN discussion).
+Use `{}` as a placeholder for the URL; if absent the URL is appended as the last argument.
+The value is executed via `sh -c`, so pipes and redirects work.
+
+```sh
+# Default — system browser (xdg-open / open / rundll32)
+unset HNCLI_OPEN
+
+# Linux clipboard (X11)
+export HNCLI_OPEN="echo {} | xclip -selection clipboard"
+
+# Wayland clipboard
+export HNCLI_OPEN="echo {} | wl-copy"
+
+# macOS clipboard
+export HNCLI_OPEN="echo {} | pbcopy"
+
+# Explicit browser
+export HNCLI_OPEN="firefox"
+```
+
 ## License
 
 [MIT](LICENSE)
