@@ -142,7 +142,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, cmd
 
 	case OpenItem:
+		// Preserve terminal dimensions — NewCommentsModel() defaults to 80×24
+		// which would cause buildLines() to wrap at 80 cols even on wider terminals.
+		w, h := a.comments.width, a.comments.height
 		a.comments = NewCommentsModel()
+		a.comments.width, a.comments.height = w, h
 		return a, LoadItemCmd(a.apiClient, msg.ID)
 
 	case BackMsg:
@@ -213,14 +217,12 @@ func Run(client *api.Client, title string, loader func() ([]*api.Item, error)) e
 	return err
 }
 
-// RunWithItems starts the TUI with a pre-built item list (e.g. search results from RSS).
+// RunWithItems starts the TUI with a pre-built item list (e.g. search results).
 func RunWithItems(client *api.Client, title string, items []*api.Item) error {
 	app := NewApp(client, title, nil)
 	app.list.loading = false
 	app.list.items = items
-	// Patch the program to start with a pre-loaded message.
 	p := tea.NewProgram(app, tea.WithAltScreen())
-	// Send the pre-loaded stories as an initial command.
 	go func() { p.Send(StoriesLoaded{Items: items}) }()
 	_, err := p.Run()
 	return err
