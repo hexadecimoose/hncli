@@ -1,3 +1,23 @@
 hncli
 *.test
 /dist/
+
+# Go build artefacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test & coverage
+*.out
+coverage.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
