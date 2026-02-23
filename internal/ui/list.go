@@ -148,11 +148,12 @@ func (m ListModel) View() string {
 		if item.URL != "" {
 			host = URLStyle.Render(hostname(item.URL))
 		}
-		meta := MetaStyle.Render(
-			fmt.Sprintf("  %s comments · by %s · %s", commentsStr(item.Descendants), item.By, item.Age()),
-		)
+		metaText := fmt.Sprintf("%s comments · by %s · %s", commentsStr(item.Descendants), item.By, item.Age())
+		var meta string
 		if host != "" {
-			meta = "    " + host + MetaStyle.Render(" · ") + meta[4:]
+			meta = "    " + host + MetaStyle.Render(" · "+metaText)
+		} else {
+			meta = "    " + MetaStyle.Render(metaText)
 		}
 
 		prefix := "  "
