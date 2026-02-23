@@ -29,13 +29,14 @@ type flatComment struct {
 
 // CommentsModel is a bubbletea model for a threaded comment view.
 type CommentsModel struct {
-	story    *api.Item
-	flat     []flatComment
-	scroll   int
-	height   int
-	width    int
-	loading  bool
-	err      error
+	story   *api.Item
+	flat    []flatComment
+	lines   []string // all content lines, pre-rendered (excluding fixed header/footer)
+	scroll  int      // first visible line index into m.lines
+	height  int
+	width   int
+	loading bool
+	err     error
 }
 
 // NewCommentsModel returns a loading comments model.
@@ -45,6 +46,55 @@ func NewCommentsModel() CommentsModel {
 
 func (m CommentsModel) Init() tea.Cmd { return nil }
 
+// buildLines re-renders all scrollable content into m.lines.
+func (m *CommentsModel) buildLines() {
+	var lines []string
+	add := func(s string) {
+		for _, l := range strings.Split(s, "\n") {
+			lines = append(lines, l)
+		}
+	}
+
+	if m.story != nil {
+		// Story meta.
+		meta := fmt.Sprintf("  %s  ▲ %d  %s comments  by %s  %s",
+			URLStyle.Render(m.story.URL),
+			m.story.Score,
+			commentsStr(m.story.Descendants),
+			CommentAuthorStyle.Render(m.story.By),
+			MetaStyle.Render(m.story.Age()),
+		)
+		add(meta)
+		if m.story.Text != "" {
+			add("")
+			add(wrapText(util.StripHTML(m.story.Text), m.width-4, "  "))
+		}
+		add("")
+	}
+
+	for _, fc := range m.flat {
+		if fc.item == nil || fc.item.Deleted || fc.item.Dead {
+			continue
+		}
+		indent := strings.Repeat("  ", fc.depth)
+		bar := IndentStyle.Render("│ ")
+
+		// Comment header line — always the first line of a comment.
+		author := CommentAuthorStyle.Render(fc.item.By)
+		age := CommentTimeStyle.Render(fc.item.Age())
+		add(indent + bar + author + "  " + age)
+
+		// Comment body.
+		text := util.StripHTML(fc.item.Text)
+		for _, line := range strings.Split(text, "\n") {
+			add(wrapText(line, m.width-4-fc.depth*2, indent+bar+"  "))
+		}
+		add("") // blank separator between comments
+	}
+
+	m.lines = lines
+}
+
 func (m CommentsModel) Update(msg tea.Msg) (CommentsModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ItemLoaded:
@@ -53,10 +103,12 @@ func (m CommentsModel) Update(msg tea.Msg) (CommentsModel, tea.Cmd) {
 		m.story = msg.Story
 		m.flat = flattenComments(msg.Comments, 0)
 		m.scroll = 0
+		m.buildLines()
 
 	case tea.WindowSizeMsg:
-		m.height = msg.Height - 4
+		m.height = msg.Height - 2 // 1 fixed header + 1 fixed footer
 		m.width = msg.Width
+		m.buildLines()
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -65,11 +117,13 @@ func (m CommentsModel) Update(msg tea.Msg) (CommentsModel, tea.Cmd) {
 				m.scroll--
 			}
 		case "down", "j":
-			m.scroll++
+			if m.scroll < len(m.lines)-m.height {
+				m.scroll++
+			}
 		case "g":
 			m.scroll = 0
 		case "G":
-			m.scroll = len(m.flat)
+			m.scroll = max(0, len(m.lines)-m.height)
 		case "o":
 			if m.story != nil && m.story.URL != "" {
 				util.OpenBrowser(m.story.URL) //nolint:errcheck
@@ -88,7 +142,7 @@ func (m CommentsModel) Update(msg tea.Msg) (CommentsModel, tea.Cmd) {
 func (m CommentsModel) View() string {
 	var b strings.Builder
 
-	// Header.
+	// Fixed header — always line 1.
 	title := "Loading…"
 	if m.story != nil {
 		title = m.story.Title
@@ -105,71 +159,26 @@ func (m CommentsModel) View() string {
 		return b.String()
 	}
 
-	// Story meta line.
-	if m.story != nil {
-		meta := fmt.Sprintf("  %s  ▲ %d  %s comments  by %s  %s",
-			URLStyle.Render(m.story.URL),
-			m.story.Score,
-			commentsStr(m.story.Descendants),
-			CommentAuthorStyle.Render(m.story.By),
-			MetaStyle.Render(m.story.Age()),
-		)
-		b.WriteString("\n" + meta + "\n")
-		if m.story.Text != "" {
-			b.WriteString("\n" + wrapText(util.StripHTML(m.story.Text), m.width-4, "  ") + "\n")
-		}
-		b.WriteString("\n")
-	}
-
-	// Render visible comments.
+	// Scrollable body: exactly m.height lines.
 	end := m.scroll + m.height
-	if end > len(m.flat) {
-		end = len(m.flat)
+	if end > len(m.lines) {
+		end = len(m.lines)
 	}
-	start := m.scroll
-	if start > len(m.flat) {
-		start = len(m.flat)
-	}
-
-	for _, fc := range m.flat[start:end] {
-		if fc.item == nil {
-			continue
-		}
-		if fc.item.Deleted || fc.item.Dead {
-			continue
-		}
-		indent := strings.Repeat("  ", fc.depth)
-		bar := IndentStyle.Render("│ ")
-
-		author := CommentAuthorStyle.Render(fc.item.By)
-		age := CommentTimeStyle.Render(fc.item.Age())
-		header := indent + bar + author + "  " + age
-		b.WriteString(header + "\n")
-
-		text := util.StripHTML(fc.item.Text)
-		for _, line := range strings.Split(text, "\n") {
-			wrapped := wrapText(line, m.width-4-fc.depth*2, indent+bar+"  ")
-			b.WriteString(wrapped + "\n")
-		}
-		b.WriteString("\n")
+	for _, line := range m.lines[m.scroll:end] {
+		b.WriteString(line + "\n")
 	}
 
-	// Scroll indicator.
-	if len(m.flat) > 0 {
-		pct := 0
-		if len(m.flat) > m.height {
-			pct = m.scroll * 100 / (len(m.flat) - m.height)
-			if pct > 100 {
-				pct = 100
-			}
-		} else {
+	// Fixed footer — always last line.
+	pct := 100
+	if len(m.lines) > m.height {
+		pct = m.scroll * 100 / (len(m.lines) - m.height)
+		if pct > 100 {
 			pct = 100
 		}
-		b.WriteString(StatusStyle.Render(fmt.Sprintf("  %d/%d comments  %d%%", start, len(m.flat), pct)))
-		b.WriteString("\n")
 	}
-
-	b.WriteString(HelpStyle.Render("  ↑/↓ scroll · o: open url · c: open hn · ←/esc: back · q: quit"))
+	b.WriteString(HelpStyle.Render(fmt.Sprintf(
+		"  ↑/↓ scroll · o: open url · c: open hn · ←/esc: back · q: quit  [%d%%]", pct,
+	)))
 	return b.String()
 }
 
