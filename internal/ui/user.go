@@ -6,8 +6,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/moose/hncli/internal/api"
-	"github.com/moose/hncli/internal/util"
+	"github.com/hexadecimoose/hncli/internal/api"
+	"github.com/hexadecimoose/hncli/internal/util"
 )
 
 // UserLoaded is sent when a user profile has been fetched.

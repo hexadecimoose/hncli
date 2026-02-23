@@ -1,4 +1,4 @@
-module github.com/moose/hncli
+module github.com/hexadecimoose/hncli
 
 go 1.24.0
 

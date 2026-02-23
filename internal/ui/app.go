@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/moose/hncli/internal/api"
+	"github.com/hexadecimoose/hncli/internal/api"
 )
 
 // View is an enum for which screen is active.

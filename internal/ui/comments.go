@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/moose/hncli/internal/api"
-	"github.com/moose/hncli/internal/util"
+	"github.com/hexadecimoose/hncli/internal/api"
+	"github.com/hexadecimoose/hncli/internal/util"
 )
 
 // ItemLoaded is sent when a single item (and its comment tree) is ready.
