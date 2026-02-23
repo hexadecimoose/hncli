@@ -1,6 +1,6 @@
 module github.com/moose/hncli
 
-go 1.22.2
+go 1.24.0
 
 require (
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.3 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.22.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 )
