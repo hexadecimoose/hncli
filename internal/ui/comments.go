@@ -77,17 +77,24 @@ func (m *CommentsModel) buildLines() {
 			continue
 		}
 		indent := strings.Repeat("  ", fc.depth)
-		bar := IndentStyle.Render("│ ")
+		renderedBar := IndentStyle.Render("│ ")
+		displayPrefix := indent + renderedBar + "  "
+		// Use a plain-text prefix for width measurement — ANSI escapes in
+		// renderedBar would inflate len() and cause premature line wraps.
+		plainPrefixLen := len(indent) + len("│   ") // "│ " + "  " = 4 visible chars
 
 		// Comment header line — always the first line of a comment.
 		author := CommentAuthorStyle.Render(fc.item.By)
 		age := CommentTimeStyle.Render(fc.item.Age())
-		add(indent + bar + author + "  " + age)
+		add(indent + renderedBar + author + "  " + age)
 
-		// Comment body.
+		// Comment body: wrap to plain lines then prepend the rendered prefix.
 		text := util.StripHTML(fc.item.Text)
-		for _, line := range strings.Split(text, "\n") {
-			add(wrapText(line, m.width-4-fc.depth*2, indent+bar+"  "))
+		wrapWidth := m.width - plainPrefixLen
+		for _, paragraph := range strings.Split(text, "\n") {
+			for _, wline := range wrapToLines(paragraph, wrapWidth) {
+				lines = append(lines, displayPrefix+wline)
+			}
 		}
 		add("") // blank separator between comments
 	}
@@ -196,7 +203,34 @@ func flattenComments(comments []*api.Item, depth int) []flatComment {
 	return out
 }
 
-// wrapText hard-wraps text at width, prefixing continuation lines with indent.
+// wrapToLines word-wraps text at width and returns the resulting lines (no prefix).
+func wrapToLines(text string, width int) []string {
+	if width <= 0 {
+		return []string{text}
+	}
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return nil
+	}
+	var lines []string
+	line := ""
+	for _, w := range words {
+		if line == "" {
+			line = w
+		} else if len(line)+1+len(w) > width {
+			lines = append(lines, line)
+			line = w
+		} else {
+			line += " " + w
+		}
+	}
+	if line != "" {
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+// wrapText hard-wraps text at width, prefixing every line with indent.
 func wrapText(text string, width int, indent string) string {
 	if width <= 0 {
 		return indent + text
