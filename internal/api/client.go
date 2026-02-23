@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
 
-const baseURL = "https://hacker-news.firebaseio.com/v0"
+const (
+	baseURL    = "https://hacker-news.firebaseio.com/v0"
+	algoliaURL = "https://hn.algolia.com/api/v1"
+)
 
 // Client is an HN Firebase API client.
 type Client struct {
@@ -121,3 +125,44 @@ func (c *Client) ShowStories(n int) ([]*Item, error) { return c.Stories("showsto
 
 // JobStories returns the N latest job stories.
 func (c *Client) JobStories(n int) ([]*Item, error) { return c.Stories("jobstories", n) }
+
+// algoliaHit is a single result from the Algolia HN search API.
+type algoliaHit struct {
+	ObjectID    string `json:"objectID"`
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Author      string `json:"author"`
+	Points      int    `json:"points"`
+	NumComments int    `json:"num_comments"`
+	CreatedAtI  int64  `json:"created_at_i"`
+}
+
+type algoliaResponse struct {
+	Hits []algoliaHit `json:"hits"`
+}
+
+// Search queries the Algolia HN search API and returns matching stories as Items.
+func (c *Client) Search(query string, n int) ([]*Item, error) {
+	u := fmt.Sprintf("%s/search?query=%s&hitsPerPage=%d&tags=story",
+		algoliaURL, url.QueryEscape(query), n)
+	var resp algoliaResponse
+	if err := c.get(u, &resp); err != nil {
+		return nil, err
+	}
+	items := make([]*Item, 0, len(resp.Hits))
+	for _, h := range resp.Hits {
+		id := 0
+		fmt.Sscanf(h.ObjectID, "%d", &id)
+		items = append(items, &Item{
+			ID:          id,
+			Type:        "story",
+			Title:       h.Title,
+			URL:         h.URL,
+			By:          h.Author,
+			Score:       h.Points,
+			Descendants: h.NumComments,
+			Time:        h.CreatedAtI,
+		})
+	}
+	return items, nil
+}
