@@ -1,4 +1,4 @@
-hncli
+/hncli
 *.test
 /dist/
 
