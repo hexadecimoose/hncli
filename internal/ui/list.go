@@ -167,7 +167,7 @@ func (m ListModel) View() string {
 
 	// Help bar.
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("  ↑/↓ navigate · enter: comments · o: open url · c: open hn · q: quit"))
+	b.WriteString(HelpStyle.Render("  ↑/↓ navigate · enter: comments · o: open url · c: open hn · r: refresh · q: quit"))
 
 	return b.String()
 }

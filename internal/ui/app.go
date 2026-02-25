@@ -20,6 +20,7 @@ const (
 // App is the root bubbletea model for the interactive browser.
 type App struct {
 	apiClient *api.Client
+	loader    func() ([]*api.Item, error)
 	view      View
 	list      ListModel
 	comments  CommentsModel
@@ -30,6 +31,7 @@ type App struct {
 func NewApp(client *api.Client, title string, loader func() ([]*api.Item, error)) *App {
 	app := &App{
 		apiClient: client,
+		loader:    loader,
 		view:      ViewList,
 		list:      NewListModel(title),
 		comments:  NewCommentsModel(),
@@ -122,6 +124,34 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == "ctrl+c" {
 			return a, tea.Quit
+		}
+		if msg.String() == "r" {
+			switch a.view {
+			case ViewList:
+				if a.loader != nil {
+					a.list.loading = true
+					a.list.items = nil
+					a.list.cursor = 0
+					a.list.offset = 0
+					return a, LoadCmd(a.loader)
+				}
+			case ViewComments:
+				if a.comments.story != nil {
+					id := a.comments.story.ID
+					w, h := a.comments.width, a.comments.height
+					a.comments = NewCommentsModel()
+					a.comments.width, a.comments.height = w, h
+					return a, LoadItemCmd(a.apiClient, id)
+				}
+			case ViewUser:
+				if a.user.user != nil {
+					username := a.user.user.ID
+					w, h := a.user.width, a.user.height
+					a.user = NewUserModel()
+					a.user.width, a.user.height = w, h
+					return a, LoadUserCmd(a.apiClient, username)
+				}
+			}
 		}
 
 	case StoriesLoaded:

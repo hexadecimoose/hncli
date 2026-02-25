@@ -184,7 +184,7 @@ func (m CommentsModel) View() string {
 		}
 	}
 	b.WriteString(HelpStyle.Render(fmt.Sprintf(
-		"  ↑/↓ scroll · o: open url · c: open hn · ←/esc: back · q: quit  [%d%%]", pct,
+		"  ↑/↓ scroll · o: open url · c: open hn · r: refresh · ←/esc: back · q: quit  [%d%%]", pct,
 	)))
 	return b.String()
 }

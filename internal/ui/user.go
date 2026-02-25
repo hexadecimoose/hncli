@@ -127,6 +127,6 @@ func (m UserModel) View() string {
 		}
 	}
 
-	b.WriteString(HelpStyle.Render("  ↑/↓ scroll · o: open in browser · ←/esc: back · q: quit"))
+	b.WriteString(HelpStyle.Render("  ↑/↓ scroll · o: open in browser · r: refresh · ←/esc: back · q: quit"))
 	return b.String()
 }
