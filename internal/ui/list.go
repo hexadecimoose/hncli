@@ -24,14 +24,14 @@ type OpenURL struct{ URL string }
 
 // ListModel is a bubbletea model for a scrollable list of stories.
 type ListModel struct {
-	title    string
-	items    []*api.Item
-	cursor   int
-	offset   int
-	height   int
-	width    int
-	loading  bool
-	err      error
+	title   string
+	items   []*api.Item
+	cursor  int
+	offset  int
+	height  int
+	width   int
+	loading bool
+	err     error
 }
 
 // NewListModel creates a list model with a given title. Items are populated later.
@@ -76,7 +76,7 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 		case "G":
 			m.cursor = len(m.items) - 1
 			m.offset = max(0, m.cursor-m.visibleLines()+1)
-		case "enter":
+		case "enter", "right", "l":
 			if len(m.items) > 0 {
 				return m, func() tea.Msg { return OpenItem{m.items[m.cursor].ID} }
 			}
@@ -167,7 +167,7 @@ func (m ListModel) View() string {
 
 	// Help bar.
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("  ↑/↓ navigate · enter: comments · o: open url · c: open hn · r: refresh · q: quit"))
+	b.WriteString(HelpStyle.Render("  ↑/↓ navigate · →/enter: comments · o: open url · c: open hn · r: refresh · q: quit"))
 
 	return b.String()
 }

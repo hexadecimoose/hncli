@@ -4,12 +4,12 @@ import "github.com/charmbracelet/lipgloss"
 
 var (
 	// Colours.
-	orange    = lipgloss.Color("#FF6600") // HN orange
+	orange     = lipgloss.Color("#FF6600") // HN orange
 	subtleGray = lipgloss.Color("#6C7D8C")
-	dimGray   = lipgloss.Color("#3D4B56")
-	white     = lipgloss.Color("#FFFAF0")
-	green     = lipgloss.Color("#72C472")
-	yellow    = lipgloss.Color("#E8C547")
+	dimGray    = lipgloss.Color("#3D4B56")
+	white      = lipgloss.Color("#FFFAF0")
+	green      = lipgloss.Color("#72C472")
+	yellow     = lipgloss.Color("#E8C547")
 
 	// Story list styles.
 	TitleStyle = lipgloss.NewStyle().
