@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"golang.org/x/term"
 	"github.com/hexadecimoose/hncli/internal/api"
 	"github.com/hexadecimoose/hncli/internal/ui"
+	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var version = "dev" // set by -ldflags at build time
@@ -220,4 +220,3 @@ var searchCmd = &cobra.Command{
 		return ui.RunWithItems(client, fmt.Sprintf("Search: %q", q), items)
 	},
 }
-
